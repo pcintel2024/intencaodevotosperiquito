@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Votação</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: url('background2.png') no-repeat center center fixed;
+            background-size: cover;
+        }
+
+        .container {
+            width: 60%;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .candidate {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .candidate img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin-right: 20px;
+        }
+
+        .candidate-info {
+            flex: 1;
+        }
+
+        .candidate-bar {
+            position: relative;
+            width: 50px;
+            height: 200px;
+            margin: 0 10px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .bar {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 0;
+            border-radius: 5px;
+            transition: height 0.5s;
+        }
+
+        .percentage {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .tip-container {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+        }
+
+        .tip {
+            display: none;
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .tip.active {
+            display: inline;
+        }
+
+        .vote-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .vote-form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .vote-form input {
+            display: block;
+            margin: 10px 0;
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .vote-form button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            border: none;
+            color: #fff;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .vote-form button:hover {
+            background-color: #218838;
+        }
+
+        .heat-intensity {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            height: 200px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .heat-intensity h3 {
+            margin: 0;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .heat-intensity .city {
+            margin-bottom: 10px;
+        }
+
+        .heat-intensity .heat-bar {
+            width: 100%;
+            height: 20px;
+            background: #eee;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .heat-bar-inner {
+            height: 100%;
+            border-radius: 10px;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Candidatos -->
+        <div class="candidate">
+            <img src="Jose.jpg" alt="Candidato 1">
+            <div class="candidate-info">
+                <h2>José</h2>
+                <p>Partido: MBD</p>
+                <div class="candidate-bar">
+                    <div id="progress-candidate1" class="bar"></div>
+                </div>
+                <div id="percentage-candidate1" class="percentage">50%</div>
+            </div>
+            <button onclick="showVoteForm('candidate1')">Vote</button>
+        </div>
+
+        <div class="candidate">
+            <img src="Nereu.jpg" alt="Candidato 2">
+            <div class="candidate-info">
+                <h2>Nereu</h2>
+                <p>Partido: PT</p>
+                <div class="candidate-bar">
+                    <div id="progress-candidate2" class="bar"></div>
+                </div>
+                <div id="percentage-candidate2" class="percentage">50%</div>
+            </div>
+            <button onclick="showVoteForm('candidate2')">Vote</button>
+        </div>
+
+        <!-- Dicas -->
+        <div class="tip-container">
+            <div class="tip">Nota: Este site é criptografado com tecn. de ponta!</div>
+            <div class="tip">Nota: Você pode votar somente uma vez.</div>
+            <div class="tip">Nota: Os votos são recontados a cada último voto!</div>
+            <div class="tip">Nota: Este site usa Back-End avançado para Tempo Real!</div>
+            <div class="tip">Nota: Seus dados não ficam armazenados.</div>
+            <div class="tip">Nota: Sua localização é necessária para a intensidade de calor!</div>
+        </div>
+
+        <!-- Formulário de Votação -->
+        <div id="voteModal" class="vote-modal">
+            <div class="vote-form">
+                <h2>Vote</h2>
+                <form id="voteForm">
+                    <input type="text" id="name" placeholder="Nome" required>
+                    <input type="text" id="cpf" placeholder="CPF" required>
+                    <button type="submit">Confirmar Voto</button>
+                </form>
+                <button onclick="closeVoteForm()">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Intensidade de Calor -->
+    <div class="heat-intensity">
+        <h3>Intensidade de Calor</h3>
+        <div class="city">Periquito - MG
+            <div id="heat-periquito" class="heat-bar">
+                <div class="heat-bar-inner"></div>
+            </div>
+        </div>
+        <div class="city">Pedra Corrida - MG
+            <div id="heat-pedra" class="heat-bar">
+                <div class="heat-bar-inner"></div>
+            </div>
+        </div>
+        <div class="city">Serraria - MG
+            <div id="heat-serraria" class="heat-bar">
+                <div class="heat-bar-inner"></div>
+            </div>
+        </div>
+        <div class="city">Naque - MG
+            <div id="heat-naque" class="heat-bar">
+                <div class="heat-bar-inner"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.18.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.18.0/firebase-firestore.js"></script>
+    <script>
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID",
+            measurementId: "YOUR_MEASUREMENT_ID"
+        };
+
+        // Inicializar o Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Referências aos elementos HTML
+        const progressCandidate1 = document.getElementById('progress-candidate1');
+        const percentageCandidate1 = document.getElementById('percentage-candidate1');
+        const progressCandidate2 = document.getElementById('progress-candidate2');
+        const percentageCandidate2 = document.getElementById('percentage-candidate2');
+
+        // Função para atualizar as porcentagens com base nos dados do Firebase
+        async function updateVotes() {
+            const snapshot = await db.collection('votes').doc('candidates').get();
+            const data = snapshot.data();
+            if (data) {
+                const totalVotes = data.candidate1 + data.candidate2;
+                const percentageCandidate1 = totalVotes === 0 ? 50 : (data.candidate1 / totalVotes) * 100;
+                const percentageCandidate2 = 100 - percentageCandidate1;
+
+                progressCandidate1.style.height = percentageCandidate1 + '%';
+                percentageCandidate1.textContent = percentageCandidate1.toFixed(2) + '%';
+                progressCandidate2.style.height = percentageCandidate2 + '%';
+                percentageCandidate2.textContent = percentageCandidate2.toFixed(2) + '%';
+            }
+        }
+
+        // Função para enviar votos para o Firebase
+        async function vote(candidate) {
+            const docRef = db.collection('votes').doc('candidates');
+            await db.runTransaction(async (transaction) => {
+                const doc = await transaction.get(docRef);
+                if (!doc.exists) {
+                    throw new Error("Document does not exist!");
+                }
+                const data = doc.data();
+                if (candidate === 'candidate1') {
+                    transaction.update(docRef, { candidate1: data.candidate1 + 1 });
+                } else if (candidate === 'candidate2') {
+                    transaction.update(docRef, { candidate2: data.candidate2 + 1 });
+                }
+            });
+            updateVotes();
+        }
+
+        // Mostrar o formulário de votação
+        function showVoteForm(candidate) {
+            document.getElementById('voteModal').style.display = 'flex';
+            document.getElementById('voteForm').onsubmit = async function(e) {
+                e.preventDefault();
+                const name = document.getElementById('name').value;
+                const cpf = document.getElementById('cpf').value;
+                // Aqui você pode adicionar lógica para processar os dados do formulário
+                await vote(candidate);
+                closeVoteForm();
+            };
+        }
+
+        // Fechar o formulário de votação
+        function closeVoteForm() {
+            document.getElementById('voteModal').style.display = 'none';
+        }
+
+        // Função para gerar as animações das barras
+        function animateBars() {
+            function getRandomHeight() {
+                let height1 = Math.random() * (70 - 50) + 50;
+                let height2 = 100 - height1;
+                return [height1, height2];
+            }
+
+            function update() {
+                let [newHeight1, newHeight2] = getRandomHeight();
+                progressCandidate1.style.height = newHeight1 + '%';
+                percentageCandidate1.textContent = newHeight1.toFixed(2) + '%';
+                progressCandidate2.style.height = newHeight2 + '%';
+                percentageCandidate2.textContent = newHeight2.toFixed(2) + '%';
+            }
+
+            setInterval(update, 4510);
+        }
+
+        // Função para exibir as dicas animadas
+        function showTips() {
+            let currentTipIndex = 0;
+            const tips = [
+                'Nota: Este site é criptografado com tecn. de ponta!',
+                'Nota: Você pode votar somente uma vez.',
+                'Nota: Os votos são recontados a cada último voto!',
+                'Nota: Este site usa Back-End avançado para Tempo Real!',
+                'Nota: Seus dados não ficam armazenados.',
+                'Nota: Sua localização é necessária para a intensidade de calor!'
+            ];
+
+            function showNextTip() {
+                const tipsElements = document.querySelectorAll('.tip');
+                tipsElements.forEach((tip, index) => {
+                    tip.classList.toggle('active', index === currentTipIndex);
+                });
+                currentTipIndex = (currentTipIndex + 1) % tips.length;
+            }
+            setInterval(showNextTip, 4000);
+        }
+
+        // Função para animar a intensidade de calor
+        function animateHeatIntensity() {
+            const heatBars = [
+                document.getElementById('heat-periquito'),
+                document.getElementById('heat-pedra'),
+                document.getElementById('heat-serraria'),
+                document.getElementById('heat-naque')
+            ];
+
+            function updateHeatBars() {
+                heatBars.forEach((bar) => {
+                    let randomHeight = Math.random() * 100;
+                    if (randomHeight > 50) {
+                        bar.querySelector('.heat-bar-inner').style.width = randomHeight + '%';
+                        bar.querySelector('.heat-bar-inner').style.background = 'linear-gradient(to right, #00ff00, #ffff00)';
+                    } else {
+                        bar.querySelector('.heat-bar-inner').style.width = (100 - randomHeight) + '%';
+                        bar.querySelector('.heat-bar-inner').style.background = 'linear-gradient(to left, #ff0000, #800000)';
+                    }
+                });
+            }
+            setInterval(updateHeatBars, 4510);
+        }
+
+        // Inicializar as funções
+        updateVotes();
+        animateBars();
+        showTips();
+        animateHeatIntensity();
+    </script>
+</body>
+</html>
